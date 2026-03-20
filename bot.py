@@ -421,6 +421,16 @@ async def goodbye(update, context):
     except:
         await update.message.reply_text(text)
 
+# -----------Fun-----------------
+
+async def delete_commands(update, context):
+    # só tenta deletar se for mensagem de texto
+    if update.message and update.message.text.startswith("/"):
+        try:
+            await update.message.delete()
+        except:
+            pass
+
 # ---------------- RUN ----------------
 
 app = ApplicationBuilder().token(TOKEN).build()
@@ -442,7 +452,7 @@ app.add_handler(CommandHandler("setgoodbye", setgoodbye))
 app.add_handler(CommandHandler("setgoodbyeimg", setgoodbyeimg))
 app.add_handler(CommandHandler("previewgoodbye", previewgoodbye))
 app.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, goodbye))
-app.add_handler(MessageHandler(filters.COMMAND, delete_commands))
+app.add_handler(MessageHandler(filters.TEXT & filters.Regex(r"^/"), delete_commands))
 
 print("🔥 Bot estilo Rose rodando...")
 app.run_polling()

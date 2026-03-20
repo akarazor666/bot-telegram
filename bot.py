@@ -29,6 +29,11 @@ def get_chat_config(chat_id):
                 "text": "👋 Bem-vindo(a), {user}!",
                 "image": None
             },
+            "goodbye": {
+                "enabled": True,
+                "text": "👋 {user} saiu do grupo.",
+                "image": None
+            },
             "auto_moderation": {
                 "enabled": True,
                 "flood_limit": 5,
@@ -271,6 +276,61 @@ async def previewwelcome(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except:
         await update.message.reply_text(text)
 
+async def setgoodbye(update, context):
+    if not await is_admin(update, context):
+        return
+
+    text = update.message.text.replace("/setgoodbye ", "")
+    cfg = get_chat_config(update.effective_chat.id)
+
+    cfg["goodbye"]["text"] = text
+    update_chat_config(update.effective_chat.id, cfg)
+
+    await update.message.reply_text("✅ Goodbye atualizado!")
+
+async def setgoodbyeimg(update, context):
+    if not await is_admin(update, context):
+        return
+
+    if not update.message.reply_to_message:
+        return await update.message.reply_text("❌ Responda uma imagem")
+
+    msg = update.message.reply_to_message
+    file_id = None
+
+    if msg.photo:
+        file_id = msg.photo[-1].file_id
+
+    elif msg.document and msg.document.mime_type.startswith("image"):
+        file_id = msg.document.file_id
+
+    if not file_id:
+        return await update.message.reply_text("❌ Imagem inválida")
+
+    cfg = get_chat_config(update.effective_chat.id)
+    cfg["goodbye"]["image"] = file_id
+    update_chat_config(update.effective_chat.id, cfg)
+
+    await update.message.reply_text("✅ Imagem de despedida atualizada!")
+
+async def previewgoodbye(update, context):
+    cfg = get_chat_config(update.effective_chat.id)
+
+    user = update.effective_user.first_name
+    text = cfg["goodbye"]["text"].replace("{user}", user)
+
+    try:
+        if cfg["goodbye"]["image"]:
+            await context.bot.send_photo(
+                chat_id=update.effective_chat.id,
+                photo=cfg["goodbye"]["image"],
+                caption=text
+            )
+        else:
+            await update.message.reply_text(text)
+    except:
+        await update.message.reply_text(text)
+
 # ---------------- AUTO MOD ----------------
 
 async def automod(update, context):
@@ -310,6 +370,12 @@ async def automod(update, context):
         await update.message.delete()
         await update.message.reply_text("🚫 Flood detectado")
 
+async def delete_commands(update, context):
+    try:
+        await update.message.delete()
+    except:
+        pass
+
 # ---------------- BOAS VINDAS ----------------
 
 async def welcome(update, context):
@@ -333,6 +399,28 @@ async def welcome(update, context):
         except:
             await update.message.reply_text(text)
 
+
+async def goodbye(update, context):
+    cfg = get_chat_config(update.effective_chat.id)
+
+    if not cfg["goodbye"]["enabled"]:
+        return
+
+    user = update.message.left_chat_member
+    text = cfg["goodbye"]["text"].replace("{user}", user.first_name)
+
+    try:
+        if cfg["goodbye"]["image"]:
+            await context.bot.send_photo(
+                chat_id=update.effective_chat.id,
+                photo=cfg["goodbye"]["image"],
+                caption=text
+            )
+        else:
+            await update.message.reply_text(text)
+    except:
+        await update.message.reply_text(text)
+
 # ---------------- RUN ----------------
 
 app = ApplicationBuilder().token(TOKEN).build()
@@ -347,11 +435,14 @@ app.add_handler(CommandHandler("settings", settings))
 app.add_handler(CommandHandler("setwelcome", setwelcome))
 app.add_handler(CommandHandler("setwelcomeimg", setwelcomeimg))
 app.add_handler(CommandHandler("previewwelcome", previewwelcome))
-
 app.add_handler(CallbackQueryHandler(buttons))
-
 app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, welcome))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, automod))
+app.add_handler(CommandHandler("setgoodbye", setgoodbye))
+app.add_handler(CommandHandler("setgoodbyeimg", setgoodbyeimg))
+app.add_handler(CommandHandler("previewgoodbye", previewgoodbye))
+app.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, goodbye))
+app.add_handler(MessageHandler(filters.COMMAND, delete_commands))
 
 print("🔥 Bot estilo Rose rodando...")
 app.run_polling()

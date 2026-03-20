@@ -432,15 +432,15 @@ async def delete_commands(update, context):
             pass
 import asyncio  # se ainda não tiver importado
 
-async def delete_command_delayed(update, context):
-    # só tenta apagar se for mensagem de texto começando com /
-    if update.message and update.message.text.startswith("/"):
-        # espera 2 segundos
-        await asyncio.sleep(2)
-        try:
-            await update.message.delete()
-        except:
-            pass
+import asyncio
+
+async def delete_command_after(update, context):
+    # espera 2 segundos
+    await asyncio.sleep(2)
+    try:
+        await update.message.delete()
+    except:
+        pass
 
 # ---------------- RUN ----------------
 
@@ -464,7 +464,7 @@ app.add_handler(CommandHandler("setgoodbyeimg", setgoodbyeimg))
 app.add_handler(CommandHandler("previewgoodbye", previewgoodbye))
 app.add_handler(MessageHandler(filters.StatusUpdate.LEFT_CHAT_MEMBER, goodbye))
 app.add_handler(MessageHandler(filters.TEXT & filters.Regex(r"^/"), delete_commands))
-app.add_handler(MessageHandler(filters.TEXT & filters.Regex(r"^/"), delete_command_delayed))
+app.add_handler(MessageHandler(filters.COMMAND, delete_command_after), group=1)
 
 print("🔥 Bot estilo Rose rodando...")
 app.run_polling()

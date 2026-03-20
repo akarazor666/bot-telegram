@@ -112,26 +112,6 @@ async def unban(update, context):
 
     await update.message.reply_text("✅ Desbanido")
 
-async def unmute(update, context):
-    if not await is_admin(update, context):
-        return
-
-    uid = get_target(update)
-    if not uid:
-        return await update.message.reply_text("Use reply ou ID")
-
-    await context.bot.restrict_chat_member(
-        update.effective_chat.id,
-        uid,
-        permissions=ChatPermissions(
-            can_send_messages=True,
-            can_send_media_messages=True,
-            can_send_other_messages=True,
-            can_add_web_page_previews=True
-        )
-    )
-
-    await update.message.reply_text("🔊 Desmutado")
 
 async def mute(update, context):
     if not await is_admin(update, context):
@@ -147,6 +127,36 @@ async def mute(update, context):
         permissions=ChatPermissions(can_send_messages=False)
     )
     await update.message.reply_text("🔇 Mutado")
+
+async def unmute(update, context):
+    if not await is_admin(update, context):
+        return
+
+    uid = get_target(update)
+    if not uid:
+        return await update.message.reply_text("Use reply ou ID")
+
+    await context.bot.restrict_chat_member(
+        chat_id=update.effective_chat.id,
+        user_id=uid,
+        permissions=ChatPermissions(
+            can_send_messages=True,
+            can_send_audios=True,
+            can_send_documents=True,
+            can_send_photos=True,
+            can_send_videos=True,
+            can_send_video_notes=True,
+            can_send_voice_notes=True,
+            can_send_polls=True,
+            can_send_other_messages=True,
+            can_add_web_page_previews=True,
+            can_change_info=False,
+            can_invite_users=True,
+            can_pin_messages=False
+        )
+    )
+
+    await update.message.reply_text("🔊 Desmutado")
 
 async def warn(update, context):
     if not await is_admin(update, context):
